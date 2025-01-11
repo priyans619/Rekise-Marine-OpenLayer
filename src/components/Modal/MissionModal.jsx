@@ -1,10 +1,10 @@
 import React from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaEllipsisV } from 'react-icons/fa';
 
 const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => {
   if (!isOpen) return null;
 
-  // calculate distance between two points in meters
+  // Calculate distance between two points in meters
   const calculateDistance = (coord1, coord2) => {
     const R = 6371e3; 
     const lat1 = (coord1[1] * Math.PI) / 180;
@@ -36,11 +36,9 @@ const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => 
 
         <hr className="my-4 border-gray-300 shadow-sm" />
 
-        
         {/* Conditional rendering */}
         {coordinates.length === 0 ? (
           <h3 className="text-base font-medium text-gray-700">Waypoint Navigation</h3>
-
         ) : (
           <div className="overflow-auto max-h-48 mt-4">
             <table className="min-w-full table-auto">
@@ -62,6 +60,14 @@ const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => 
                         {`(${coord[1]?.toFixed(8) || 0}, ${coord[0]?.toFixed(8) || 0})`}
                       </td>
                       <td className="px-4 py-2">{distance.toFixed(2)}</td>
+                      <td className="px-4 py-2">
+                        <button
+                          onClick={() => console.log(`Action for WP${index + 1}`)} // Add action handler here
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          <FaEllipsisV size={16} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -69,6 +75,7 @@ const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => 
             </table>
           </div>
         )}
+
         <div className="border-2 border-dotted border-gray-400 bg-gray-50 text-gray-600 text-sm p-4 my-4 rounded">
           Click on the map to mark points of the route and press enter to complete the route.
         </div>
