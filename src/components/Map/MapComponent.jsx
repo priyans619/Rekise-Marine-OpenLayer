@@ -1,70 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import Map from 'ol/Map';  // Correct import
-import View from 'ol/View';  // Correct import
-import { fromLonLat } from 'ol/proj';
-import LineString from 'ol/geom/LineString';
+import Map from 'ol/Map';
+import View from 'ol/View';
+import TileLayer from 'ol/layer/Tile';
+import OSM from 'ol/source/OSM';
 import Draw from 'ol/interaction/Draw';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
+import { useGeographic } from 'ol/proj';
 import MissionModal from '../Modal/MissionModal';
 
-const Map = () => {
+useGeographic();
+
+const MapComponent = () => {
   const [coordinates, setCoordinates] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Create map instance
-    const map = new Map({
-      target: 'map', // The div id where the map will be rendered
-      layers: [
-        new VectorLayer({
-          source: new VectorSource(),
+    try {
+      const vectorSource = new VectorSource();
+      const vectorLayer = new VectorLayer({
+        source: vectorSource,
+      });
+
+      // Initialize the map
+      const map = new Map({
+        target: 'map',
+        layers: [
+          new TileLayer({
+            source: new OSM(),
+          }),
+          vectorLayer,
+        ],
+        view: new View({
+          center: [0, 0],
+          zoom: 2,
         }),
-      ],
-      view: new View({
-        center: fromLonLat([0, 0]), // Default center [Longitude, Latitude]
-        zoom: 2, // Default zoom level
-      }),
-    });
+      });
 
-    // Create Draw interaction for drawing lines
-    const draw = new Draw({
-      source: new VectorSource(),
-      type: 'LineString', // Draw a line string
-    });
+      const draw = new Draw({
+        source: vectorSource,
+        type: 'LineString',
+      });
 
-    draw.on('drawend', (event) => {
-      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
-      setCoordinates(drawnCoordinates); // Set the coordinates of the drawn line
-      setIsModalOpen(true); // Open modal when drawing is completed
-    });
+      // Handle draw end event
+      draw.on('drawend', (event) => {
+        const drawnCoordinates = event.feature.getGeometry().getCoordinates();
+        setCoordinates(drawnCoordinates); // Set coordinates state
+        setIsModalOpen(true); // Open the modal
+      });
 
-    // Add drawing interaction to map
-    map.addInteraction(draw);
+      // add draw-interaction ---> to the map
+      map.addInteraction(draw);
 
-    return () => {
-      map.removeInteraction(draw); // Cleanup the draw interaction on component unmount
-    };
+      return () => {
+        map.setTarget(null); // cleanup for memoryleaks
+      };
+    } catch (error) {
+      console.error('Error initializing the map:', error);
+    }
   }, []);
 
-  const closeModal = () => setIsModalOpen(false); // Close modal
-
+  // close modal : reset coordinates
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setCoordinates([]); // Reset coordinates
+  };
   const handleGenerateData = () => {
-    alert("Data generated successfully!"); // Example action after generating data
-    setIsModalOpen(false); // Close modal after data generation
+    console.log('Generated Data:', coordinates);
+    // Implement your data generation logic here
   };
 
   return (
     <div>
-      <div id="map" className="h-full w-full"></div>
+      <div id="map" style={{ width: '100%', height: '400px' }}></div>
       <MissionModal
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
+        isOpen={isModalOpen}
+        onClose={closeModal}
         coordinates={coordinates}
-        onGenerateData={handleGenerateData} 
+        onGenerateData={handleGenerateData}
       />
     </div>
   );
 };
 
-export default Map;
+export default MapComponent;
