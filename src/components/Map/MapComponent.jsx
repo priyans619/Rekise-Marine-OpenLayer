@@ -14,65 +14,82 @@ useGeographic();
 const MapComponent = () => {
   const [coordinates, setCoordinates] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [drawInteraction, setDrawInteraction] = useState(null);
 
   useEffect(() => {
-    try {
-      const vectorSource = new VectorSource();
-      const vectorLayer = new VectorLayer({
-        source: vectorSource,
-      });
+    const vectorSource = new VectorSource();
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+    });
 
-      // Initialize the map
-      const map = new Map({
-        target: 'map',
-        layers: [
-          new TileLayer({
-            source: new OSM(),
-          }),
-          vectorLayer,
-        ],
-        view: new View({
-          center: [0, 0],
-          zoom: 2,
+    // Initialize the map
+    const map = new Map({
+      target: 'map',
+      layers: [
+        new TileLayer({
+          source: new OSM(),
         }),
-      });
+        vectorLayer,
+      ],
+      view: new View({
+        center: [0, 0],
+        zoom: 2,
+      }),
+    });
 
-      const draw = new Draw({
-        source: vectorSource,
-        type: 'LineString',
-      });
+    // Add draw interaction
+    const draw = new Draw({
+      source: vectorSource,
+      type: 'LineString',
+    });
+    setDrawInteraction(draw);
+    map.addInteraction(draw);
 
-      // Handle draw end event
-      draw.on('drawend', (event) => {
-        const drawnCoordinates = event.feature.getGeometry().getCoordinates();
-        setCoordinates(drawnCoordinates); // Set coordinates state
-        setIsModalOpen(true); // Open the modal
-      });
-
-      // add draw-interaction ---> to the map
-      map.addInteraction(draw);
-
-      return () => {
-        map.setTarget(null); // cleanup for memoryleaks
-      };
-    } catch (error) {
-      console.error('Error initializing the map:', error);
-    }
+    // Cleanup function
+    return () => {
+      map.setTarget(null);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!drawInteraction) return;
+
+    // Listener for when drawing ends (Enter key)
+    const handleKeyDown = (event) => {
+      if (event.key === 'Enter') {
+        drawInteraction.finishDrawing(); // Simulates the end of the drawing
+      }
+    };
+
+    // Listen for the `drawend` event to open the modal and get coordinates
+    drawInteraction.on('drawend', (event) => {
+      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
+      setCoordinates(drawnCoordinates);
+      setIsModalOpen(true);
+    });
+
+    // Attach keydown listener
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [drawInteraction]);
 
   // close modal : reset coordinates
   const closeModal = () => {
     setIsModalOpen(false);
-    setCoordinates([]); // Reset coordinates
+    setCoordinates([]);
   };
+
   const handleGenerateData = () => {
     console.log('Generated Data:', coordinates);
-    // Implement your data generation logic here
   };
 
   return (
-    <div>
-      <div id="map" style={{ width: '100%', height: '400px' }}></div>
+    <div className="h-screen w-screen">
+      <div id="map" className="h-full w-full"></div>
       <MissionModal
         isOpen={isModalOpen}
         onClose={closeModal}
