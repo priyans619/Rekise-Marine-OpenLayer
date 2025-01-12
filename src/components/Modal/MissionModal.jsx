@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaTimes, FaEllipsisV } from 'react-icons/fa';
 import { calculateDistance } from '../../utils/distance';
+import Dropdown from '../Map/dropdown';
 
 const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => {
+  const [dropdownIndex, setDropdownIndex] = useState(null);
+
   if (!isOpen) return null;
 
   // Function to calculate the total distance for each row
   const getDistance = (index) => {
-    if (index === 0) return 0; // Distance for the first waypoint is always 0
+    if (index === 0) return 0;
     return calculateDistance(coordinates[index - 1], coordinates[index]);
+  };
+
+  const handleDropdownToggle = (index) => {
+    setDropdownIndex(dropdownIndex === index ? null : index); // Toggle visibility
   };
 
   return (
@@ -47,8 +54,19 @@ const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => 
                     <td className="px-4 py-2">
                       {getDistance(index).toFixed(2)} m
                     </td>
-                    <td>
-                      <FaEllipsisV size={18} />
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => handleDropdownToggle(index)}
+                        className="text-gray-600 hover:text-gray-900"
+                      >
+                        <FaEllipsisV size={18} />
+                      </button>
+
+                      <Dropdown
+                        index={index}
+                        dropdownIndex={dropdownIndex}
+                        toggleDropdown={handleDropdownToggle}
+                      />
                     </td>
                   </tr>
                 ))}
