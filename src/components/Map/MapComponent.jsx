@@ -18,7 +18,7 @@ const MapComponent = () => {
   const [isPolygonModalOpen, setIsPolygonModalOpen] = useState(false);
   const [drawInteraction, setDrawInteraction] = useState(null);
   const [currentShape, setCurrentShape] = useState('');
-  const [map, setMap] = useState(null); 
+  const [map, setMap] = useState(null);
 
   useEffect(() => {
     const vectorSource = new VectorSource();
@@ -65,8 +65,16 @@ const MapComponent = () => {
 
     // Event listeners for Polygon
     drawPolygon.on('drawend', (event) => {
-      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
-      setCoordinates(drawnCoordinates);
+      const geometry = event.feature.getGeometry();
+      const drawnCoordinates = geometry.getCoordinates(); // Returns an array of arrays for polygons
+
+      if (drawnCoordinates.length > 0) {
+        const outerRing = drawnCoordinates[0];
+        setCoordinates(outerRing);
+      } else {
+        setCoordinates([]);
+      }
+
       setCurrentShape('Polygon');
       setIsPolygonModalOpen(true);
     });
@@ -76,6 +84,9 @@ const MapComponent = () => {
     setDrawInteraction(drawLineString);
 
     return () => {
+      if (drawInteraction && mapInstance) {
+        mapInstance.removeInteraction(drawInteraction);
+      }
       mapInstance.setTarget(null);
     };
   }, []);
@@ -85,9 +96,8 @@ const MapComponent = () => {
     setIsLineStringModalOpen(false);
     setCoordinates([]);
 
-    // Remove current interaction (LineString)
     if (drawInteraction && map) {
-      map.removeInteraction(drawInteraction); // Remove LineString interaction
+      map.removeInteraction(drawInteraction); // Remove LineString
     }
 
     // Switch to Polygon interaction
@@ -96,15 +106,22 @@ const MapComponent = () => {
       type: 'Polygon',
     });
 
-    // Handle drawing Polygon
     polygonInteraction.on('drawend', (event) => {
-      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
-      setCoordinates(drawnCoordinates);
+      const geometry = event.feature.getGeometry();
+      const drawnCoordinates = geometry.getCoordinates();
+      console.log('Polygon drawn coordinates:', drawnCoordinates);
+
+      if (drawnCoordinates.length > 0) {
+        const outerRing = drawnCoordinates[0];
+        setCoordinates(outerRing);
+      } else {
+        setCoordinates([]);
+      }
+
       setCurrentShape('Polygon');
       setIsPolygonModalOpen(true);
     });
 
-    // Add Polygon interaction
     map.addInteraction(polygonInteraction);
     setDrawInteraction(polygonInteraction);
   };
