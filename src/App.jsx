@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Map from "./components/Map/Map";
+import MapComponent from "./components/Map/MapComponent";
 import MissionModal from "./components/Modal/MissionModal";
 import DrawButton from "./components/Button/DrawButton";
 
@@ -14,11 +14,22 @@ const App = () => {
     setIsModalOpen(false);
   };
 
+  const handleGenerateData = () => {
+    alert("Data generated successfully!");
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="h-screen w-full">
-      <Map />
+      <MapComponent />
       <DrawButton onClick={handleDrawClick} />
-      {isModalOpen && <MissionModal onClose={closeModal} />}
+      {isModalOpen && (
+        <MissionModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onGenerateData={handleGenerateData}
+        />
+      )}
     </div>
   );
 };
