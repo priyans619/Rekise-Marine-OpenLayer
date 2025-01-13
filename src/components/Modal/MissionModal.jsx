@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FaTimes, FaEllipsisV } from 'react-icons/fa';
 import { calculateDistance } from '../../utils/distance';
-import Dropdown from '../Map/dropdown';
 
 const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => {
   const [dropdownIndex, setDropdownIndex] = useState(null);
@@ -15,7 +14,15 @@ const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => 
   };
 
   const handleDropdownToggle = (index) => {
-    setDropdownIndex(dropdownIndex === index ? null : index); // Toggle visibility
+    setDropdownIndex(dropdownIndex === index ? null : index);
+  };
+
+  const handleInsertPolygon = (position) => {
+    console.log(`Insert Polygon ${position === 'Before' ? 'Before' : 'After'} waypoint ${coordinates[dropdownIndex]}`);
+    
+    // close the modal and insert the polygon
+    setDropdownIndex(null);
+    onClose();
   };
 
   return (
@@ -62,11 +69,25 @@ const MissionModal = ({ isOpen, onClose, coordinates = [], onGenerateData }) => 
                         <FaEllipsisV size={18} />
                       </button>
 
-                      <Dropdown
-                        index={index}
-                        dropdownIndex={dropdownIndex}
-                        toggleDropdown={handleDropdownToggle}
-                      />
+                      {/* Dropdown Menu */}
+                      {dropdownIndex === index && (
+                        <div className="absolute bg-white border shadow-lg rounded mt-2 right-0 w-48">
+                          <ul className="text-gray-700">
+                            <li
+                              className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                              onClick={() => handleInsertPolygon('Before')}
+                            >
+                              Insert Polygon Before
+                            </li>
+                            <li
+                              className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                              onClick={() => handleInsertPolygon('After')}
+                            >
+                              Insert Polygon After
+                            </li>
+                          </ul>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
