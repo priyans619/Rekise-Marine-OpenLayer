@@ -19,9 +19,9 @@ const MapComponent = () => {
   const [drawInteraction, setDrawInteraction] = useState(null);
   const [currentShape, setCurrentShape] = useState('');
   const [map, setMap] = useState(null);
+  const vectorSource = React.useRef(new VectorSource()).current;
 
   useEffect(() => {
-    const vectorSource = new VectorSource();
     const vectorLayer = new VectorLayer({
       source: vectorSource,
     });
@@ -41,17 +41,17 @@ const MapComponent = () => {
       }),
     });
 
-    setMap(mapInstance); // Set the map instance
+    setMap(mapInstance);
 
     // Draw interaction for LineString
     const drawLineString = new Draw({
-      source: vectorSource,
+      source: vectorSource, // Use shared vector source
       type: 'LineString',
     });
 
     // Draw interaction for Polygon
     const drawPolygon = new Draw({
-      source: vectorSource,
+      source: vectorSource, // Use shared vector source
       type: 'Polygon',
     });
 
@@ -66,7 +66,7 @@ const MapComponent = () => {
     // Event listeners for Polygon
     drawPolygon.on('drawend', (event) => {
       const geometry = event.feature.getGeometry();
-      const drawnCoordinates = geometry.getCoordinates(); // Returns an array of arrays for polygons
+      const drawnCoordinates = geometry.getCoordinates();
 
       if (drawnCoordinates.length > 0) {
         const outerRing = drawnCoordinates[0];
@@ -89,7 +89,7 @@ const MapComponent = () => {
       }
       mapInstance.setTarget(null);
     };
-  }, []);
+  }, [vectorSource]);
 
   // Handle closing the MissionModal and switching to Polygon mode
   const closeLineStringModal = () => {
@@ -102,7 +102,7 @@ const MapComponent = () => {
 
     // Switch to Polygon interaction
     const polygonInteraction = new Draw({
-      source: new VectorSource(),
+      source: vectorSource, // Use shared vector source
       type: 'Polygon',
     });
 
