@@ -45,7 +45,6 @@ const MapComponent = () => {
     setDrawInteraction(draw);
     map.addInteraction(draw);
 
-    // Cleanup function
     return () => {
       map.setTarget(null);
     };
@@ -57,7 +56,7 @@ const MapComponent = () => {
     // Listener for when drawing ends (Enter key)
     const handleKeyDown = (event) => {
       if (event.key === 'Enter') {
-        drawInteraction.finishDrawing(); // Simulates the end of the drawing
+        drawInteraction.finishDrawing();
       }
     };
 
