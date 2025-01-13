@@ -8,13 +8,17 @@ import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { useGeographic } from 'ol/proj';
 import MissionModal from '../Modal/MissionModal';
+import PolygonModal from '../Modal/PolygonModal';
 
 useGeographic();
 
 const MapComponent = () => {
   const [coordinates, setCoordinates] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLineStringModalOpen, setIsLineStringModalOpen] = useState(false);
+  const [isPolygonModalOpen, setIsPolygonModalOpen] = useState(false);
   const [drawInteraction, setDrawInteraction] = useState(null);
+  const [currentShape, setCurrentShape] = useState('');
+  const [map, setMap] = useState(null); 
 
   useEffect(() => {
     const vectorSource = new VectorSource();
@@ -23,7 +27,7 @@ const MapComponent = () => {
     });
 
     // Initialize the map
-    const map = new Map({
+    const mapInstance = new Map({
       target: 'map',
       layers: [
         new TileLayer({
@@ -37,48 +41,77 @@ const MapComponent = () => {
       }),
     });
 
-    // Add draw interaction
-    const draw = new Draw({
+    setMap(mapInstance); // Set the map instance
+
+    // Draw interaction for LineString
+    const drawLineString = new Draw({
       source: vectorSource,
       type: 'LineString',
     });
-    setDrawInteraction(draw);
-    map.addInteraction(draw);
+
+    // Draw interaction for Polygon
+    const drawPolygon = new Draw({
+      source: vectorSource,
+      type: 'Polygon',
+    });
+
+    // Event listeners for LineString
+    drawLineString.on('drawend', (event) => {
+      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
+      setCoordinates(drawnCoordinates);
+      setCurrentShape('LineString');
+      setIsLineStringModalOpen(true);
+    });
+
+    // Event listeners for Polygon
+    drawPolygon.on('drawend', (event) => {
+      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
+      setCoordinates(drawnCoordinates);
+      setCurrentShape('Polygon');
+      setIsPolygonModalOpen(true);
+    });
+
+    // Set initial interaction to draw LineString
+    mapInstance.addInteraction(drawLineString);
+    setDrawInteraction(drawLineString);
 
     return () => {
-      map.setTarget(null);
+      mapInstance.setTarget(null);
     };
   }, []);
 
-  useEffect(() => {
-    if (!drawInteraction) return;
+  // Handle closing the MissionModal and switching to Polygon mode
+  const closeLineStringModal = () => {
+    setIsLineStringModalOpen(false);
+    setCoordinates([]);
 
-    // Listener for when drawing ends (Enter key)
-    const handleKeyDown = (event) => {
-      if (event.key === 'Enter') {
-        drawInteraction.finishDrawing();
-      }
-    };
+    // Remove current interaction (LineString)
+    if (drawInteraction && map) {
+      map.removeInteraction(drawInteraction); // Remove LineString interaction
+    }
 
-    // Listen for the `drawend` event to open the modal and get coordinates
-    drawInteraction.on('drawend', (event) => {
-      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
-      setCoordinates(drawnCoordinates);
-      setIsModalOpen(true);
+    // Switch to Polygon interaction
+    const polygonInteraction = new Draw({
+      source: new VectorSource(),
+      type: 'Polygon',
     });
 
-    // Attach keydown listener
-    window.addEventListener('keydown', handleKeyDown);
+    // Handle drawing Polygon
+    polygonInteraction.on('drawend', (event) => {
+      const drawnCoordinates = event.feature.getGeometry().getCoordinates();
+      setCoordinates(drawnCoordinates);
+      setCurrentShape('Polygon');
+      setIsPolygonModalOpen(true);
+    });
 
-    // Cleanup listener on unmount
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [drawInteraction]);
+    // Add Polygon interaction
+    map.addInteraction(polygonInteraction);
+    setDrawInteraction(polygonInteraction);
+  };
 
-  // close modal : reset coordinates
-  const closeModal = () => {
-    setIsModalOpen(false);
+  // Handle closing the PolygonModal
+  const closePolygonModal = () => {
+    setIsPolygonModalOpen(false);
     setCoordinates([]);
   };
 
@@ -89,9 +122,19 @@ const MapComponent = () => {
   return (
     <div className="h-screen w-screen">
       <div id="map" className="h-full w-full"></div>
+
+      {/* LineString Modal */}
       <MissionModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
+        isOpen={isLineStringModalOpen}
+        onClose={closeLineStringModal}
+        coordinates={coordinates}
+        onGenerateData={handleGenerateData}
+      />
+
+      {/* Polygon Modal */}
+      <PolygonModal
+        isOpen={isPolygonModalOpen}
+        onClose={closePolygonModal}
         coordinates={coordinates}
         onGenerateData={handleGenerateData}
       />
